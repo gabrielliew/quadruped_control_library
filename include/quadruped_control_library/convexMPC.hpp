@@ -8,30 +8,82 @@
 #include <tuple>
 #include <vector>
 
+/**
+ * @brief Contains the required components of the Model Predictive Control (MPC)
+ *
+ */
 struct MPCdata
 {
+    /**
+     * @brief Rotation angle of the robot in world frame (radians)
+     * 
+     */
     Eigen::Vector3d rotation;
+    /**
+     * @brief Position of the robot in world frame (m)
+     * 
+     */
     Eigen::Vector3d position;
+    /**
+     * @brief Rotational velocity of the robot in world frame (radians/second)
+     * 
+     */
     Eigen::Vector3d rotation_velocity;
+    /**
+     * @brief Linear velocity of the robot in world frame (m/second)
+     * 
+     */
     Eigen::Vector3d linear_velocity;
 };
 
 class ConvexMPC
 {
 public:
+    /**
+     * @brief Construct a new ConvexMPC object
+     * 
+     * @param horizon Number of horizons within the MPC 
+     * @param dtMPC Time between horizons within the MPC
+     * @param gravity World gravity, usually -9.8 (m^2/s)
+     * @param numLegs Number of legs of the robot
+     */
     ConvexMPC(uint horizon, double dtMPC, double gravity, uint numLegs);
+
+    /**
+     * @brief Updates the body inertia of the robot in the case of added payload that significantly modifies robot inertia
+     *
+     * @param IBody The simplified body inertia of the robot with size <3,3>
+     */
     void updateBodyInertia(Eigen::Matrix<double, 3, 3> IBody)
     {
         IBody_ = IBody;
     }
+
+    /**
+     * @brief Updates the body mass of the robot
+     *
+     * @param mass The mass of the robot in kilograms
+     */
     void updateBodyMass(double mass)
     {
         mass_ = mass;
     }
+
+    /**
+     * @brief Updates the friction coefficient between foot and the ground
+     *
+     * @param mu Friction coefficient which is 0<mu<1
+     */
     void updateFrictionCoefficient(double mu)
     {
         mu_ = mu;
     }
+
+    /**
+     * @brief create state weight matrice
+     * 
+     * @param stateWeights 
+     */
     void updateStateWeights(Eigen::Matrix<double, 13, 1> stateWeights);
     void updateForceWeights(double forceWeights);
     std::vector<double> solveMPC(const MPCdata &mpcData, const MPCdata &desiredState, const std::vector<bool> &gaitTable, const Eigen::Matrix<double, 3, -1> &rFeet);

@@ -28,8 +28,8 @@ std::vector<double> FixedGait::getContactProgression(uint64_t timeFromStart)
     {
         /*
         There are four cases this may happen:
-        a) 0000011111 offset=5
-        b) 0111110000 offset=1 ()
+        a) 0000011111 offset=5 (+10-5)
+        b) 0111110000 offset=1 (-1)
         c) 1111100000 offset=0 (0)
         d) 1110000011 offset=8 (+10-8)
               ^
@@ -67,16 +67,6 @@ std::vector<double> FixedGait::getSwingProgression(uint64_t timeFromStart)
     std::vector<double> tempProgress;
     for (int i = 0; i < numLegs_; i++)
     {
-        /*
-        There are four cases this may happen:
-        a) 0000011111 offset=5
-        b) 0111110000 offset=1 ()
-        c) 1111100000 offset=0 (0)
-        d) 1110000011 offset=8 (+10-8)
-              ^
-        Considering the current progress is at ^ mark, segment =3.5
-        0 is swing, 1 is contact so the progress has to be shifted to normalize it to 1111100000 at each leg but shift segment progress
-        */
         uint64_t normalizedTimeSegment;
         if (currentTime > offset_[i])
         {
@@ -120,7 +110,7 @@ std::vector<bool> FixedGait::getGaitTable(uint64_t timeFromStart)
         }
         timeFromStart += singleSegmentNs_;
     }
-// #ifdef NDEBUG
+#ifdef NDEBUG
     for (int i = 0, j = 0; i < numSegments_ * numLegs_; i++, j++)
     {
         std::cout << gaitTable[i] << " ";
@@ -130,6 +120,6 @@ std::vector<bool> FixedGait::getGaitTable(uint64_t timeFromStart)
             j = -1;
         }
     }
-// #endif
+#endif
     return gaitTable;
 }

@@ -24,6 +24,10 @@ TEST(FixedGait, getContactProgression)
     EXPECT_NEAR(contactResult[3], 0, ABS_ERROR);
 }
 
+/**
+ * @brief Construct a new TEST object
+ * 
+ */
 TEST(FixedGait, getGaitTable)
 {
     auto tableResult = fixedGait.getGaitTable(14.3 * 1e9);
