@@ -95,15 +95,15 @@ std::vector<double> FixedGait::getSwingProgression(uint64_t timeFromStart)
             tempProgress.push_back(0);
         }
 #ifdef NDEBUG
-            std::cout << i << "  " << tempProgress[i] << std::endl;
+        std::cout << i << "  " << tempProgress[i] << std::endl;
 #endif
     }
     return tempProgress;
 }
 
-Eigen::Matrix<int, -1, -1> FixedGait::getGaitTable(uint64_t timeFromStart)
+std::vector<bool> FixedGait::getGaitTable(uint64_t timeFromStart)
 {
-    auto gaitTable = Eigen::Matrix<int, -1, -1>(numSegments_, numLegs_);
+    std::vector<bool> gaitTable;
     for (int i = 0; i < numSegments_; i++)
     {
         auto contactState = getContactProgression(timeFromStart);
@@ -111,17 +111,25 @@ Eigen::Matrix<int, -1, -1> FixedGait::getGaitTable(uint64_t timeFromStart)
         {
             if (contactState[j] != 0)
             {
-                gaitTable(i, j) = 1;
+                gaitTable.push_back(1);
             }
             else
             {
-                gaitTable(i, j) = 0;
+                gaitTable.push_back(0);
             }
         }
         timeFromStart += singleSegmentNs_;
     }
-#ifdef NDEBUG
-        std::cout << gaitTable << std::endl;
-#endif
+// #ifdef NDEBUG
+    for (int i = 0, j = 0; i < numSegments_ * numLegs_; i++, j++)
+    {
+        std::cout << gaitTable[i] << " ";
+        if (j == 3)
+        {
+            std::cout << std::endl;
+            j = -1;
+        }
+    }
+// #endif
     return gaitTable;
 }

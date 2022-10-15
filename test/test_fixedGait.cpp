@@ -42,7 +42,7 @@ TEST(FixedGait, getGaitTable)
     {
         for (int j = 0; j < 4; j++)
         {
-            EXPECT_EQ(tableResult(i, j), tableData(i, j));
+            EXPECT_EQ(tableResult[i*4+j], tableData(i, j));
         }
     }
 }

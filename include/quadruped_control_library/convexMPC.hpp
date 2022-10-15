@@ -34,9 +34,9 @@ public:
     }
     void updateStateWeights(Eigen::Matrix<double, 13, 1> stateWeights);
     void updateForceWeights(double forceWeights);
-    std::vector<double> solveMPC(const MPCdata &mpcData, const MPCdata &desiredState, const Eigen::Matrix<int, -1, -1> &gaitTable, const Eigen::Matrix<double, 3, -1> &rFeet);
+    std::vector<double> solveMPC(const MPCdata &mpcData, const MPCdata &desiredState, const std::vector<bool> &gaitTable, const Eigen::Matrix<double, 3, -1> &rFeet);
     Eigen::Matrix<double, -1, 1> getTrajectory(const MPCdata &desiredState);
-    std::tuple<std::vector<bool>, uint> getGaitData(const Eigen::Matrix<int, -1, -1> &gaitTable);
+    std::tuple<std::vector<bool>, uint> getGaitData(const std::vector<bool> &gaitTable);
     Eigen::Matrix<double, -1, 1> getLowerBoundary(uint numLegsActive);
     Eigen::Matrix<double, -1, 1> getUpperBoundary(uint numLegsActive, double maxForce);
     Eigen::Matrix<double, -1, -1> getConstraintMatrix(uint numLegsActive, double mu);

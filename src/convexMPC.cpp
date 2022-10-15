@@ -22,7 +22,7 @@ void ConvexMPC::updateForceWeights(double forceWeights)
     forceWeights_ = forceWeights_ * forceWeights;
 }
 
-std::vector<double> ConvexMPC::solveMPC(const MPCdata &mpcData, const MPCdata &desiredState, const Eigen::Matrix<int, -1, -1> &gaitTable, const Eigen::Matrix<double, 3, -1> &rFeet)
+std::vector<double> ConvexMPC::solveMPC(const MPCdata &mpcData, const MPCdata &desiredState, const std::vector<bool> &gaitTable, const Eigen::Matrix<double, 3, -1> &rFeet)
 {
     Eigen::Matrix<double, 13, 1> x0;
     x0 << mpcData.rotation[0], mpcData.rotation[1], mpcData.rotation[2],
@@ -69,7 +69,6 @@ std::vector<double> ConvexMPC::solveMPC(const MPCdata &mpcData, const MPCdata &d
             mpcForces.push_back(0.0);
         }
     }
-
     return mpcForces;
 }
 
@@ -94,23 +93,19 @@ Eigen::Matrix<double, -1, 1> ConvexMPC::getTrajectory(const MPCdata &desiredStat
     return trajectory;
 }
 
-std::tuple<std::vector<bool>, uint> ConvexMPC::getGaitData(const Eigen::Matrix<int, -1, -1> &gaitTable)
+std::tuple<std::vector<bool>, uint> ConvexMPC::getGaitData(const std::vector<bool> &gaitTable)
 {
-    uint numLegsActive = 0;
+    uint numLegsActive = std::count(gaitTable.begin(), gaitTable.end(), 1);
     std::vector<bool> reductionVector;
-    for (int row = 0; row < horizon_; row++)
+    for (int i = 0; i < horizon_ * numLegs_; i++)
     {
-        for (int column = 0; column < numLegs_; column++)
+        if (gaitTable[i] == 1)
         {
-            if (gaitTable(row, column) == 1)
-            {
-                numLegsActive++;
-                reductionVector.insert(reductionVector.end(), 3, 1);
-            }
-            else
-            {
-                reductionVector.insert(reductionVector.end(), 3, 0);
-            }
+            reductionVector.insert(reductionVector.end(), 3, 1);
+        }
+        else
+        {
+            reductionVector.insert(reductionVector.end(), 3, 0);
         }
     }
     return {reductionVector, numLegsActive};

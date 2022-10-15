@@ -26,7 +26,7 @@ public:
      */
     std::vector<double> getSwingProgression(uint64_t timeFromStart);
     std::vector<double> getContactProgression(uint64_t timeFromStart);
-    Eigen::Matrix<int, -1, -1> getGaitTable(uint64_t timeFromStart);
+    std::vector<bool> getGaitTable(uint64_t timeFromStart);
 
 private:
     uint numSegments_;
