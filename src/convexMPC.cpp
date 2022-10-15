@@ -8,7 +8,21 @@ ConvexMPC::ConvexMPC(uint horizon, double dtMPC, double gravity, uint numLegs)
     numLegs_ = numLegs;
 }
 
-Eigen::Matrix<double, -1, 1> ConvexMPC::solveMPC(MPCdata mpcData, MPCdata desiredState)
+void ConvexMPC::updateStateWeights(Eigen::Matrix<double, 13, 1> stateWeights)
+{
+    stateWeights_.resize(13 * horizon_, 13 * horizon_);
+    stateWeights_.setIdentity();
+    stateWeights_.diagonal() = stateWeights.replicate(horizon_, 1);
+}
+
+void ConvexMPC::updateForceWeights(double forceWeights)
+{
+    forceWeights_.resize(3 * numLegs_ * horizon_, 3 * numLegs_ * horizon_);
+    forceWeights_.setIdentity();
+    forceWeights_ = forceWeights_ * forceWeights;
+}
+
+std::vector<double> ConvexMPC::solveMPC(const MPCdata &mpcData, const MPCdata &desiredState, const Eigen::Matrix<int, -1, -1> &gaitTable, const Eigen::Matrix<double, 3, -1> &rFeet)
 {
     Eigen::Matrix<double, 13, 1> x0;
     x0 << mpcData.rotation[0], mpcData.rotation[1], mpcData.rotation[2],
@@ -16,21 +30,47 @@ Eigen::Matrix<double, -1, 1> ConvexMPC::solveMPC(MPCdata mpcData, MPCdata desire
         mpcData.rotation_velocity[0], mpcData.rotation_velocity[1], mpcData.rotation_velocity[2],
         mpcData.linear_velocity[0], mpcData.linear_velocity[1], mpcData.linear_velocity[2],
         gravity_;
-
     double yc = std::cos(mpcData.rotation[2]);
     double ys = std::sin(mpcData.rotation[2]);
-    RYaw::Matrix<double, 3, 3> RYaw;
+    Eigen::Matrix<double, 3, 3> RYaw;
     RYaw << yc, -ys, 0,
         ys, yc, 0,
         0, 0, 1;
-
-    auto Adt = getAdt();
-    auto Bdt = getBdt(RYaw);
+    auto [reductionVector, numLegsActive] = getGaitData(gaitTable);
+    auto Adt = getAdt(RYaw);
+    auto Bdt = getBdt(RYaw, rFeet);
     auto [Aqp, Bqp] = getAqp_Bqp(Adt, Bdt);
     auto xD = getTrajectory(desiredState);
-    auto [qH, qG] = getqH_qG(x0, xD);
-    Eigen::Matrix<double, -1, 1> test;
-    return test;
+    auto [H, g] = getH_g(x0, xD, Aqp, Bqp);
+    auto [HRed, gRed] = getHRed_gRed(H, g, reductionVector, numLegsActive);
+    auto lB = getLowerBoundary(numLegsActive);
+    auto uB = getLowerBoundary(numLegsActive);
+    auto A = getConstraintMatrix(numLegsActive, mu_);
+    Eigen::Matrix<double, -1, 1> mpcResult;
+    mpcResult.resize(numLegsActive * 3, 1);
+    qpOASES::QProblem problem_red(numLegsActive * 3, numLegsActive * 5);
+    qpOASES::Options op;
+    op.setToMPC();
+    op.printLevel = qpOASES::PL_NONE;
+    problem_red.setOptions(op);
+    qpOASES::int_t nWSR = 100;
+    problem_red.init(HRed.data(), gRed.data(), A.data(), NULL, NULL, lB.data(), uB.data(), nWSR);
+    problem_red.getPrimalSolution(mpcResult.data());
+    std::vector<double> mpcForces;
+    for (int i = 0, j = 0; i < numLegs_ * 3; i++)
+    {
+        if (reductionVector[i])
+        {
+            mpcForces.push_back(mpcResult[j]);
+            j++;
+        }
+        else
+        {
+            mpcForces.push_back(0.0);
+        }
+    }
+
+    return mpcForces;
 }
 
 Eigen::Matrix<double, -1, 1> ConvexMPC::getTrajectory(const MPCdata &desiredState)
@@ -54,23 +94,45 @@ Eigen::Matrix<double, -1, 1> ConvexMPC::getTrajectory(const MPCdata &desiredStat
     return trajectory;
 }
 
-Eigen::Matrix<double, -1, 1> ConvexMPC::getLowerLimit(uint numLegsActive)
+std::tuple<std::vector<bool>, uint> ConvexMPC::getGaitData(const Eigen::Matrix<int, -1, -1> &gaitTable)
+{
+    uint numLegsActive = 0;
+    std::vector<bool> reductionVector;
+    for (int row = 0; row < horizon_; row++)
+    {
+        for (int column = 0; column < numLegs_; column++)
+        {
+            if (gaitTable(row, column) == 1)
+            {
+                numLegsActive++;
+                reductionVector.insert(reductionVector.end(), 3, 1);
+            }
+            else
+            {
+                reductionVector.insert(reductionVector.end(), 3, 0);
+            }
+        }
+    }
+    return {reductionVector, numLegsActive};
+}
+
+Eigen::Matrix<double, -1, 1> ConvexMPC::getLowerBoundary(uint numLegsActive)
 {
     return Eigen::Matrix<double, -1, 1>::Constant(numLegsActive * 5, 0.0);
 }
 
-Eigen::Matrix<double, -1, 1> ConvexMPC::getUpperLimit(uint numLegsActive, double maxForce)
+Eigen::Matrix<double, -1, 1> ConvexMPC::getUpperBoundary(uint numLegsActive, double maxForce)
 {
-    Eigen::Matrix<double, -1, 1> upperLimit(numLegsActive * 5, 1);
+    Eigen::Matrix<double, -1, 1> upperBoundary(numLegsActive * 5, 1);
     for (int i = 0; i < numLegsActive; i++)
     {
-        upperLimit(i * 5 + 0, 0) = std::numeric_limits<double>::max();
-        upperLimit(i * 5 + 1, 0) = std::numeric_limits<double>::max();
-        upperLimit(i * 5 + 2, 0) = std::numeric_limits<double>::max();
-        upperLimit(i * 5 + 3, 0) = std::numeric_limits<double>::max();
-        upperLimit(i * 5 + 4, 0) = maxForce;
+        upperBoundary(i * 5 + 0, 0) = std::numeric_limits<double>::max();
+        upperBoundary(i * 5 + 1, 0) = std::numeric_limits<double>::max();
+        upperBoundary(i * 5 + 2, 0) = std::numeric_limits<double>::max();
+        upperBoundary(i * 5 + 3, 0) = std::numeric_limits<double>::max();
+        upperBoundary(i * 5 + 4, 0) = maxForce;
     }
-    return upperLimit;
+    return upperBoundary;
 }
 
 Eigen::Matrix<double, -1, -1> ConvexMPC::getConstraintMatrix(uint numLegsActive, double mu)
@@ -91,18 +153,18 @@ Eigen::Matrix<double, -1, -1> ConvexMPC::getConstraintMatrix(uint numLegsActive,
     return constraintMatrix;
 }
 
-Eigen::Matrix<double, 13, 13> ConvexMPC::getAdt()
+Eigen::Matrix<double, 13, 13> ConvexMPC::getAdt(const Eigen::Matrix<double, 3, 3> &rYaw)
 {
     Eigen::Matrix<double, 13, 13> Adt;
     Adt.setZero();
     Adt.setIdentity();
-    Adt.block(0, 6, 3, 3) = RYaw_.transpose() * dtMPC_;
+    Adt.block(0, 6, 3, 3) = rYaw.transpose() * dtMPC_;
     Adt.block(3, 9, 3, 3) = Eigen::Matrix<double, 3, 3>::Identity() * dtMPC_;
     Adt(11, 12) = dtMPC_;
     return Adt;
 }
 
-Eigen::Matrix<double, 13, -1> ConvexMPC::getBdt(const Eigen::Matrix<double, 3, 3> &rYaw)
+Eigen::Matrix<double, 13, -1> ConvexMPC::getBdt(const Eigen::Matrix<double, 3, 3> &rYaw, const Eigen::Matrix<double, 3, -1> &rFeet)
 {
     Eigen::Matrix<double, 13, -1> Bdt;
     Bdt.resize(13, 3 * numLegs_);
@@ -113,11 +175,11 @@ Eigen::Matrix<double, 13, -1> ConvexMPC::getBdt(const Eigen::Matrix<double, 3, 3
     for (int i = 0; i < numLegs_; i++)
     {
         Eigen::Matrix<double, 3, 3> crossMat;
-        crossMat << 0.0, -rFeet_(2, i), rFeet_(1, i),
-            rFeet_(2, i), 0.0, -rFeet_(0, i),
-            -rFeet_(1, i), rFeet_(0, i), 0.0;
-        Bdt.block(6, i * 3, 3, 3) = IWorld_inv * crossMat;
-        Bdt.block(9, i * 3, 3, 3) = Eigen::Matrix<double, 3, 3>::Identity() / mass_;
+        crossMat << 0.0, -rFeet(2, i), rFeet(1, i),
+            rFeet(2, i), 0.0, -rFeet(0, i),
+            -rFeet(1, i), rFeet(0, i), 0.0;
+        Bdt.block(6, i * 3, 3, 3) = IWorld_inv * crossMat * dtMPC_;
+        Bdt.block(9, i * 3, 3, 3) = Eigen::Matrix<double, 3, 3>::Identity() * dtMPC_ / mass_;
     }
     return Bdt;
 }
@@ -151,13 +213,39 @@ std::tuple<Eigen::Matrix<double, -1, 13>, Eigen::Matrix<double, -1, -1>> ConvexM
     return {Aqp, Bqp};
 }
 
-std::tuple<Eigen::Matrix<double, -1, -1>, Eigen::Matrix<double, -1, 1>> ConvexMPC::getqH_qG(const Eigen::Matrix<double, 13, 1> &x0, const Eigen::Matrix<double, -1, 1> &xD)
+std::tuple<Eigen::Matrix<double, -1, -1>, Eigen::Matrix<double, -1, 1>> ConvexMPC::getH_g(const Eigen::Matrix<double, 13, 1> &x0, const Eigen::Matrix<double, -1, 1> &xD, const Eigen::Matrix<double, -1, 13> &Aqp, const Eigen::Matrix<double, -1, -1> &Bqp)
 {
-
     Eigen::Matrix<double, -1, -1> qH;
     Eigen::Matrix<double, -1, 1> qG;
     qH.resize(3 * numLegs_ * horizon_, 3 * numLegs_ * horizon_);
     qH = 2 * Bqp.transpose() * stateWeights_ * Bqp + forceWeights_;
     qG = 2 * Bqp.transpose() * stateWeights_ * (Aqp * x0 - xD);
     return {qH, qG};
+}
+
+std::tuple<Eigen::Matrix<double, -1, -1>, Eigen::Matrix<double, -1, 1>> ConvexMPC::getHRed_gRed(const Eigen::Matrix<double, -1, -1> &H, const Eigen::Matrix<double, -1, 1> &g, std::vector<bool> reductionVector, uint numLegsActive)
+{
+    Eigen::Matrix<double, -1, -1> HRed;
+    HRed.resize(numLegsActive * 3, numLegsActive * 3);
+    Eigen::Matrix<double, -1, 1> gRed;
+    gRed.resize(numLegsActive * 3, 1);
+    for (int i = 0, k = 0; i < numLegsActive * 3; i++)
+    {
+        while (reductionVector[k] == 0)
+        {
+            k++;
+        }
+        for (int j = 0, l = 0; j < numLegsActive * 3; j++)
+        {
+            while (reductionVector[l] == 0)
+            {
+                l++;
+            }
+            HRed(i, j) = H(i, l);
+            l++;
+        }
+        gRed(i, 0) = g(k, 0);
+        k++;
+    }
+    return {HRed, gRed};
 }

@@ -8,7 +8,7 @@ ConvexMPC convexMPC(10, 0.3, -9.8, 4);
 TEST(ConvexMPC, getUpperLimit)
 {
     EXPECT_EQ(1, 1);
-    auto upperLimit = convexMPC.getUpperLimit(2, 10.1); // 0.5s passed
+    auto upperLimit = convexMPC.getLowerBoundary(2); // 0.5s passed
     std::cout << upperLimit << std::endl;
 }
 
@@ -19,7 +19,7 @@ TEST(ConvexMPC, getConstraintMatrix)
     std::cout << constraintMatrix << std::endl;
 }
 
-// TEST(ConvexMPC, getAqp_Bqp)
+// TEST(ConvexMPC, getHRed_gRed)
 // {
 
 // }

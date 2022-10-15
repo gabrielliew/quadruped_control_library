@@ -6,6 +6,7 @@
 #include <Eigen/Dense>
 #include <cmath>
 #include <tuple>
+#include <vector>
 
 struct MPCdata
 {
@@ -27,33 +28,23 @@ public:
     {
         mass_ = mass;
     }
-    void updateStateWeights(Eigen::Matrix<double, 13, 1> stateWeights)
+    void updateFrictionCoefficient(double mu)
     {
-        stateWeights_.resize(13 * horizon_, 13 * horizon_);
-        stateWeights_.setIdentity();
-        stateWeights_.diagonal() = stateWeights.replicate(horizon_, 1);
+        mu_ = mu;
     }
-    void updateForceWeights(double forceWeights)
-    {
-        forceWeights_.resize(3 * numLegs_ * horizon_, 3 * numLegs_ * horizon_);
-        forceWeights_.setIdentity();
-        forceWeights_ = forceWeights_ * forceWeights;
-    }
-    void updateFeetLocation(Eigen::Matrix<double, 3, -1> rFeet)
-    {
-        rFeet_ = rFeet;
-    }
-    Eigen::Matrix<double, -1, 1> solveMPC(MPCdata mpcData, MPCdata desiredState);
+    void updateStateWeights(Eigen::Matrix<double, 13, 1> stateWeights);
+    void updateForceWeights(double forceWeights);
+    std::vector<double> solveMPC(const MPCdata &mpcData, const MPCdata &desiredState, const Eigen::Matrix<int, -1, -1> &gaitTable, const Eigen::Matrix<double, 3, -1> &rFeet);
     Eigen::Matrix<double, -1, 1> getTrajectory(const MPCdata &desiredState);
-    Eigen::Matrix<double, -1, 1> getLowerLimit(uint numLegsActive);
-    Eigen::Matrix<double, -1, 1> getUpperLimit(uint numLegsActive, double maxForce);
+    std::tuple<std::vector<bool>, uint> getGaitData(const Eigen::Matrix<int, -1, -1> &gaitTable);
+    Eigen::Matrix<double, -1, 1> getLowerBoundary(uint numLegsActive);
+    Eigen::Matrix<double, -1, 1> getUpperBoundary(uint numLegsActive, double maxForce);
     Eigen::Matrix<double, -1, -1> getConstraintMatrix(uint numLegsActive, double mu);
-    Eigen::Matrix<double, 13, 13> getAdt();
-    Eigen::Matrix<double, 13, -1> getBdt(const Eigen::Matrix<double, 3, 3> &rYaw);
+    Eigen::Matrix<double, 13, 13> getAdt(const Eigen::Matrix<double, 3, 3> &rYaw);
+    Eigen::Matrix<double, 13, -1> getBdt(const Eigen::Matrix<double, 3, 3> &rYaw, const Eigen::Matrix<double, 3, -1> &rFeet);
     std::tuple<Eigen::Matrix<double, -1, 13>, Eigen::Matrix<double, -1, -1>> getAqp_Bqp(const Eigen::Matrix<double, 13, 13> &Adt, Eigen::Matrix<double, 13, -1> &Bdt);
-    std::tuple<Eigen::Matrix<double, -1, -1>, Eigen::Matrix<double, -1, 1>> getqH_qG(const Eigen::Matrix<double, 13, 1> &x0, const Eigen::Matrix<double, -1, 1> &xD);
-    
-
+    std::tuple<Eigen::Matrix<double, -1, -1>, Eigen::Matrix<double, -1, 1>> getH_g(const Eigen::Matrix<double, 13, 1> &x0, const Eigen::Matrix<double, -1, 1> &xD, const Eigen::Matrix<double, -1, 13> &Aqp, const Eigen::Matrix<double, -1, -1> &Bqp);
+    std::tuple<Eigen::Matrix<double, -1, -1>, Eigen::Matrix<double, -1, 1>> getHRed_gRed(const Eigen::Matrix<double, -1, -1> &H, const Eigen::Matrix<double, -1, 1> &g, std::vector<bool> reductionVector, uint numLegsActive);
     // Eigen::Matrix<double, -1, -1> getReduced
 
 private:
@@ -62,6 +53,7 @@ private:
     double gravity_;
     double mass_;
     uint numLegs_;
+    double mu_;
     Eigen::Matrix<double, 3, 3> IBody_;
     Eigen::Matrix<double, -1, -1> stateWeights_;
     Eigen::Matrix<double, -1, -1> forceWeights_;
