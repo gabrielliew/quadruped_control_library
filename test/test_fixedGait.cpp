@@ -2,7 +2,7 @@
 
 #include "quadruped_control_library/fixedGait.hpp"
 
-#define ABS_ERROR 0.00001
+#define ABS_ERROR 0.001
 
 FixedGait fixedGait(4, 10, 0.6, 0.3, std::vector<int>{0, 5, 5, 0});
 
