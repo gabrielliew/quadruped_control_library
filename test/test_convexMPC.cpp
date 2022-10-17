@@ -451,7 +451,7 @@ TEST(ConvexMPC, getAqp_Bqp)
     }
     for (int i = 0; i < 13 * horizon; i++)
     {
-        for (int j = 0; j < numLegs * 3 * 13; j++)
+        for (int j = 0; j < numLegs * 3 * horizon; j++)
         {
             EXPECT_NEAR(Bqp(i, j), example_Bqp(i, j), ABS_ERROR);
         }
