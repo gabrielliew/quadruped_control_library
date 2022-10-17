@@ -1,4 +1,5 @@
 #include "quadruped_control_library/convexMPC.hpp"
+#include <iostream>
 
 ConvexMPC::ConvexMPC(uint horizon, double dtMPC, double gravity, uint numLegs)
 {
@@ -44,7 +45,7 @@ std::vector<double> ConvexMPC::solveMPC(const MPCdata &mpcData, const MPCdata &d
     auto [H, g] = getH_g(x0, xD, Aqp, Bqp);
     auto [HRed, gRed] = getHRed_gRed(H, g, reductionVector, numLegsActive);
     auto lB = getLowerBoundary(numLegsActive);
-    auto uB = getLowerBoundary(numLegsActive);
+    auto uB = getUpperBoundary(numLegsActive, maxForce_);
     auto A = getConstraintMatrix(numLegsActive, mu_);
     Eigen::Matrix<double, -1, 1> mpcResult;
     mpcResult.resize(numLegsActive * 3, 1);
@@ -164,9 +165,9 @@ Eigen::Matrix<double, 13, -1> ConvexMPC::getBdt(const Eigen::Matrix<double, 3, 3
     Eigen::Matrix<double, 13, -1> Bdt;
     Bdt.resize(13, 3 * numLegs_);
     Bdt.setZero();
-    Eigen::Matrix<double, 3, 3> IWorld_inv;
-    IWorld_inv = rYaw * IBody_ * rYaw.transpose();
-    IWorld_inv = IWorld_inv.inverse();
+    Eigen::Matrix<double, 3, 3> IWorld_inv, IWorld;
+    IWorld = rYaw * IBody_ * rYaw.transpose();
+    IWorld_inv = IWorld.inverse();
     for (int i = 0; i < numLegs_; i++)
     {
         Eigen::Matrix<double, 3, 3> crossMat;

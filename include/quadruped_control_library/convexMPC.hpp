@@ -16,22 +16,22 @@ struct MPCdata
 {
     /**
      * @brief Rotation angle of the robot in world frame (radians)
-     * 
+     *
      */
     Eigen::Vector3d rotation;
     /**
      * @brief Position of the robot in world frame (m)
-     * 
+     *
      */
     Eigen::Vector3d position;
     /**
      * @brief Rotational velocity of the robot in world frame (radians/second)
-     * 
+     *
      */
     Eigen::Vector3d rotation_velocity;
     /**
      * @brief Linear velocity of the robot in world frame (m/second)
-     * 
+     *
      */
     Eigen::Vector3d linear_velocity;
 };
@@ -41,8 +41,8 @@ class ConvexMPC
 public:
     /**
      * @brief Construct a new ConvexMPC object
-     * 
-     * @param horizon Number of horizons within the MPC 
+     *
+     * @param horizon Number of horizons within the MPC
      * @param dtMPC Time between horizons within the MPC
      * @param gravity World gravity, usually -9.8 (m^2/s)
      * @param numLegs Number of legs of the robot
@@ -79,10 +79,14 @@ public:
         mu_ = mu;
     }
 
+    void updateMaxForce(double maxForce)
+    {
+        maxForce_ = maxForce;
+    }
     /**
      * @brief create state weight matrice
-     * 
-     * @param stateWeights 
+     *
+     * @param stateWeights
      */
     void updateStateWeights(Eigen::Matrix<double, 13, 1> stateWeights);
     void updateForceWeights(double forceWeights);
@@ -106,6 +110,7 @@ private:
     double mass_;
     uint numLegs_;
     double mu_;
+    double maxForce_;
     Eigen::Matrix<double, 3, 3> IBody_;
     Eigen::Matrix<double, -1, -1> stateWeights_;
     Eigen::Matrix<double, -1, -1> forceWeights_;

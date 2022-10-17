@@ -15,7 +15,7 @@ The planned components of the library are:
     - [x] convex Model Predictive Control
     - [ ] Leg Controller 
 - Foot movement components
-    - [ ] Fixed Gait
+    - [x] Fixed Gait
     - [x] Fixed Foot Trajectory 
     - [ ] Fixed Foot Planner
 - Dynamics components
