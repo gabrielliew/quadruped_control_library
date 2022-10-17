@@ -44,6 +44,7 @@ std::vector<double> ConvexMPC::solveMPC(const MPCdata &mpcData, const MPCdata &d
     auto xD = getTrajectory(desiredState);
     auto [H, g] = getH_g(x0, xD, Aqp, Bqp);
     auto [HRed, gRed] = getHRed_gRed(H, g, reductionVector, numLegsActive);
+    std::cout << HRed << std::endl;
     auto lB = getLowerBoundary(numLegsActive);
     auto uB = getUpperBoundary(numLegsActive, maxForce_);
     auto A = getConstraintMatrix(numLegsActive, mu_);
@@ -57,6 +58,7 @@ std::vector<double> ConvexMPC::solveMPC(const MPCdata &mpcData, const MPCdata &d
     qpOASES::int_t nWSR = 100;
     problem_red.init(HRed.data(), gRed.data(), A.data(), NULL, NULL, lB.data(), uB.data(), nWSR);
     problem_red.getPrimalSolution(mpcResult.data());
+    
     std::vector<double> mpcForces;
     for (int i = 0, j = 0; i < numLegs_ * 3; i++)
     {
@@ -122,10 +124,10 @@ Eigen::Matrix<double, -1, 1> ConvexMPC::getUpperBoundary(uint numLegsActive, dou
     Eigen::Matrix<double, -1, 1> upperBoundary(numLegsActive * 5, 1);
     for (int i = 0; i < numLegsActive; i++)
     {
-        upperBoundary(i * 5 + 0, 0) = std::numeric_limits<double>::max();
-        upperBoundary(i * 5 + 1, 0) = std::numeric_limits<double>::max();
-        upperBoundary(i * 5 + 2, 0) = std::numeric_limits<double>::max();
-        upperBoundary(i * 5 + 3, 0) = std::numeric_limits<double>::max();
+        upperBoundary(i * 5 + 0, 0) = 5e10;
+        upperBoundary(i * 5 + 1, 0) = 5e10;
+        upperBoundary(i * 5 + 2, 0) = 5e10;
+        upperBoundary(i * 5 + 3, 0) = 5e10;
         upperBoundary(i * 5 + 4, 0) = maxForce;
     }
     return upperBoundary;
@@ -214,6 +216,7 @@ std::tuple<Eigen::Matrix<double, -1, -1>, Eigen::Matrix<double, -1, 1>> ConvexMP
     Eigen::Matrix<double, -1, -1> qH;
     Eigen::Matrix<double, -1, 1> qG;
     qH.resize(3 * numLegs_ * horizon_, 3 * numLegs_ * horizon_);
+    //          120x130           130x130    130x120   120x120
     qH = 2 * Bqp.transpose() * stateWeights_ * Bqp + forceWeights_;
     qG = 2 * Bqp.transpose() * stateWeights_ * (Aqp * x0 - xD);
     return {qH, qG};
@@ -237,7 +240,7 @@ std::tuple<Eigen::Matrix<double, -1, -1>, Eigen::Matrix<double, -1, 1>> ConvexMP
             {
                 l++;
             }
-            HRed(i, j) = H(i, l);
+            HRed(i, j) = H(k, l);
             l++;
         }
         gRed(i, 0) = g(k, 0);
