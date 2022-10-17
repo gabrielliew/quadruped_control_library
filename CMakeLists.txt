@@ -29,9 +29,10 @@ option(BUILD_SHARED_LIBS "If ON, build shared library instead of static" OFF)
 
 include_directories(
   include
-
   # ${catkin_INCLUDE_DIRS}
 )
+
+configure_file(${CMAKE_SOURCE_DIR}/include/path.hpp.in ${CMAKE_SOURCE_DIR}/include/path.hpp)
 
 file(GLOB_RECURSE QUADRUPED_CONTROL_SOURCES "src/*.cpp")
 
@@ -84,5 +85,6 @@ target_link_libraries(test_main
   ${RBDL_URDFREADER_LIBRARY}
   quadruped_control
   GTest::gtest_main)
+target_link_directories(test_main PUBLIC ${CMAKE_SOURCE_DIR}/test)
 include(GoogleTest)
 gtest_discover_tests(test_main)
