@@ -5,7 +5,7 @@
 #include "quadruped_control_library/convexMPC.hpp"
 #include <iostream>
 
-#define ABS_ERROR 0.0001
+#define ABS_ERROR 0.001
 
 int horizon = 10;
 int numLegs = 4;
@@ -244,11 +244,11 @@ TEST(ConvexMPC, solveMPC)
     convexMPC.updateForceWeights(4e-5);
     convexMPC.updateMaxForce(maxForce);
     convexMPC.updateFrictionCoefficient(mu);
+    auto [reductionVector, numLegsActive] = convexMPC.getGaitData(gaitTable);
     auto mpcForces = convexMPC.solveMPC(mpcData, desiredState, gaitTable, rFeet);
     auto example_mpcForces = openData<double>(getTestDataCSV("mpcForces"));
-    // for (int i = 0; i < numLegs * 3; i++)
-    // {
-    //     EXPECT_NEAR(mpcForces[i], example_mpcForces(i, 0), ABS_ERROR);
-    // }
-
+    for (int i = 0; i < numLegs * 3; i++)
+    {
+        EXPECT_NEAR(mpcForces[i], example_mpcForces(i, 0), ABS_ERROR);
+    }
 }

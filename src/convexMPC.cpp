@@ -44,7 +44,6 @@ std::vector<double> ConvexMPC::solveMPC(const MPCdata &mpcData, const MPCdata &d
     auto xD = getTrajectory(desiredState);
     auto [H, g] = getH_g(x0, xD, Aqp, Bqp);
     auto [HRed, gRed] = getHRed_gRed(H, g, reductionVector, numLegsActive);
-    std::cout << HRed << std::endl;
     auto lB = getLowerBoundary(numLegsActive);
     auto uB = getUpperBoundary(numLegsActive, maxForce_);
     auto A = getConstraintMatrix(numLegsActive, mu_);
@@ -58,7 +57,6 @@ std::vector<double> ConvexMPC::solveMPC(const MPCdata &mpcData, const MPCdata &d
     qpOASES::int_t nWSR = 100;
     problem_red.init(HRed.data(), gRed.data(), A.data(), NULL, NULL, lB.data(), uB.data(), nWSR);
     problem_red.getPrimalSolution(mpcResult.data());
-    
     std::vector<double> mpcForces;
     for (int i = 0, j = 0; i < numLegs_ * 3; i++)
     {
@@ -133,7 +131,7 @@ Eigen::Matrix<double, -1, 1> ConvexMPC::getUpperBoundary(uint numLegsActive, dou
     return upperBoundary;
 }
 
-Eigen::Matrix<double, -1, -1> ConvexMPC::getConstraintMatrix(uint numLegsActive, double mu)
+Eigen::Matrix<double, -1, -1, Eigen::RowMajor> ConvexMPC::getConstraintMatrix(uint numLegsActive, double mu)
 {
     Eigen::Matrix<double, 5, 3> constraintBlock;
     double muInv = 1.0 / mu;
@@ -142,7 +140,7 @@ Eigen::Matrix<double, -1, -1> ConvexMPC::getConstraintMatrix(uint numLegsActive,
         0.0, muInv, 1.0,
         0.0, -muInv, 1.0,
         0.0, 0.0, 1.0;
-    Eigen::Matrix<double, -1, -1> constraintMatrix(numLegsActive * 5, numLegsActive * 3);
+    Eigen::Matrix<double, -1, -1, Eigen::RowMajor> constraintMatrix(numLegsActive * 5, numLegsActive * 3);
     constraintMatrix.setZero();
     for (int i = 0; i < numLegsActive; i++)
     {
@@ -216,15 +214,16 @@ std::tuple<Eigen::Matrix<double, -1, -1>, Eigen::Matrix<double, -1, 1>> ConvexMP
     Eigen::Matrix<double, -1, -1> qH;
     Eigen::Matrix<double, -1, 1> qG;
     qH.resize(3 * numLegs_ * horizon_, 3 * numLegs_ * horizon_);
+    qG.resize(3 * numLegs_ * horizon_, 1);
     //          120x130           130x130    130x120   120x120
-    qH = 2 * Bqp.transpose() * stateWeights_ * Bqp + forceWeights_;
+    qH = 2 * (Bqp.transpose() * stateWeights_ * Bqp + forceWeights_);
     qG = 2 * Bqp.transpose() * stateWeights_ * (Aqp * x0 - xD);
     return {qH, qG};
 }
 
-std::tuple<Eigen::Matrix<double, -1, -1>, Eigen::Matrix<double, -1, 1>> ConvexMPC::getHRed_gRed(const Eigen::Matrix<double, -1, -1> &H, const Eigen::Matrix<double, -1, 1> &g, std::vector<bool> reductionVector, uint numLegsActive)
+std::tuple<Eigen::Matrix<double, -1, -1, Eigen::RowMajor>, Eigen::Matrix<double, -1, 1>> ConvexMPC::getHRed_gRed(const Eigen::Matrix<double, -1, -1> &H, const Eigen::Matrix<double, -1, 1> &g, std::vector<bool> reductionVector, uint numLegsActive)
 {
-    Eigen::Matrix<double, -1, -1> HRed;
+    Eigen::Matrix<double, -1, -1, Eigen::RowMajor> HRed;
     HRed.resize(numLegsActive * 3, numLegsActive * 3);
     Eigen::Matrix<double, -1, 1> gRed;
     gRed.resize(numLegsActive * 3, 1);
