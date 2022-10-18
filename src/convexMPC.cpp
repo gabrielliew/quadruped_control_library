@@ -23,7 +23,7 @@ void ConvexMPC::updateForceWeights(double forceWeights)
     forceWeights_ = forceWeights_ * forceWeights;
 }
 
-std::vector<double> ConvexMPC::solveMPC(const MPCdata &mpcData, const MPCdata &desiredState, const std::vector<bool> &gaitTable, const Eigen::Matrix<double, 3, -1> &rFeet)
+std::vector<Eigen::Vector3d> ConvexMPC::solveMPC(const MPCdata &mpcData, const MPCdata &desiredState, const std::vector<bool> &gaitTable, const Eigen::Matrix<double, 3, -1> &rFeet)
 {
     Eigen::Matrix<double, 13, 1> x0;
     x0 << mpcData.rotation[0], mpcData.rotation[1], mpcData.rotation[2],
@@ -57,17 +57,17 @@ std::vector<double> ConvexMPC::solveMPC(const MPCdata &mpcData, const MPCdata &d
     qpOASES::int_t nWSR = 100;
     problem_red.init(HRed.data(), gRed.data(), A.data(), NULL, NULL, lB.data(), uB.data(), nWSR);
     problem_red.getPrimalSolution(mpcResult.data());
-    std::vector<double> mpcForces;
-    for (int i = 0, j = 0; i < numLegs_ * 3; i++)
+    std::vector<Eigen::Vector3d> mpcForces;
+    for (int i = 0, j = 0; i < numLegs_; i++)
     {
-        if (reductionVector[i])
+        if (reductionVector[i * 3])
         {
-            mpcForces.push_back(mpcResult[j]);
-            j++;
+            mpcForces.push_back(Eigen::Vector3d(mpcResult[j], mpcResult[j + 1], mpcResult[j + 2]));
+            j += 3;
         }
         else
         {
-            mpcForces.push_back(0.0);
+            mpcForces.push_back(Eigen::Vector3d(0, 0, 0));
         }
     }
     return mpcForces;
