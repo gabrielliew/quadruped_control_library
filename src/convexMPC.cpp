@@ -23,16 +23,16 @@ void ConvexMPC::updateForceWeights(double forceWeights)
     forceWeights_ = forceWeights_ * forceWeights;
 }
 
-std::vector<Eigen::Vector3d> ConvexMPC::solveMPC(const MPCdata &mpcData, const MPCdata &desiredState, const std::vector<bool> &gaitTable, const Eigen::Matrix<double, 3, -1> &rFeet)
+std::vector<Eigen::Vector3d> ConvexMPC::solveMPC(const MPCdata &currentState, const MPCdata &desiredState, const std::vector<bool> &gaitTable, const Eigen::Matrix<double, 3, -1> &rFeet)
 {
     Eigen::Matrix<double, 13, 1> x0;
-    x0 << mpcData.rotation[0], mpcData.rotation[1], mpcData.rotation[2],
-        mpcData.position[0], mpcData.position[1], mpcData.position[2],
-        mpcData.rotation_velocity[0], mpcData.rotation_velocity[1], mpcData.rotation_velocity[2],
-        mpcData.linear_velocity[0], mpcData.linear_velocity[1], mpcData.linear_velocity[2],
+    x0 << currentState.rotation[0], currentState.rotation[1], currentState.rotation[2],
+        currentState.position[0], currentState.position[1], currentState.position[2],
+        currentState.rotation_velocity[0], currentState.rotation_velocity[1], currentState.rotation_velocity[2],
+        currentState.linear_velocity[0], currentState.linear_velocity[1], currentState.linear_velocity[2],
         gravity_;
-    double yc = std::cos(mpcData.rotation[2]);
-    double ys = std::sin(mpcData.rotation[2]);
+    double yc = std::cos(currentState.rotation[2]);
+    double ys = std::sin(currentState.rotation[2]);
     Eigen::Matrix<double, 3, 3> RYaw;
     RYaw << yc, -ys, 0,
         ys, yc, 0,

@@ -90,7 +90,7 @@ public:
      */
     void updateStateWeights(Eigen::Matrix<double, 13, 1> stateWeights);
     void updateForceWeights(double forceWeights);
-    std::vector<Eigen::Vector3d> solveMPC(const MPCdata &mpcData, const MPCdata &desiredState, const std::vector<bool> &gaitTable, const Eigen::Matrix<double, 3, -1> &rFeet);
+    std::vector<Eigen::Vector3d> solveMPC(const MPCdata &currentState, const MPCdata &desiredState, const std::vector<bool> &gaitTable, const Eigen::Matrix<double, 3, -1> &rFeet);
     Eigen::Matrix<double, -1, 1> getTrajectory(const MPCdata &desiredState);
     std::tuple<std::vector<bool>, uint> getGaitData(const std::vector<bool> &gaitTable);
     Eigen::Matrix<double, -1, 1> getLowerBoundary(uint numLegsActive);

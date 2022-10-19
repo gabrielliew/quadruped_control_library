@@ -225,11 +225,11 @@ TEST(ConvexMPC, getHRed_gRed)
 
 TEST(ConvexMPC, solveMPC)
 {
-    MPCdata mpcData;
-    mpcData.rotation = Eigen::Vector3d(-0.0347722, -0.0184942, 0.948284);
-    mpcData.position = Eigen::Vector3d(-0.371743, 0.301919, 0.294017);
-    mpcData.rotation_velocity = Eigen::Vector3d(0.0749526, 0.0135219, 0.462512);
-    mpcData.linear_velocity = Eigen::Vector3d(-0.246506, 0.0248134, 0.0463022);
+    MPCdata currentState;
+    currentState.rotation = Eigen::Vector3d(-0.0347722, -0.0184942, 0.948284);
+    currentState.position = Eigen::Vector3d(-0.371743, 0.301919, 0.294017);
+    currentState.rotation_velocity = Eigen::Vector3d(0.0749526, 0.0135219, 0.462512);
+    currentState.linear_velocity = Eigen::Vector3d(-0.246506, 0.0248134, 0.0463022);
     MPCdata desiredState;
     desiredState.rotation = Eigen::Vector3d(0.0042443, 0.0134921, 0.948284);
     desiredState.position = Eigen::Vector3d(-0.369856, 0.29033, 0.29);
@@ -245,7 +245,7 @@ TEST(ConvexMPC, solveMPC)
     convexMPC.updateMaxForce(maxForce);
     convexMPC.updateFrictionCoefficient(mu);
     auto [reductionVector, numLegsActive] = convexMPC.getGaitData(gaitTable);
-    auto mpcForces = convexMPC.solveMPC(mpcData, desiredState, gaitTable, rFeet);
+    auto mpcForces = convexMPC.solveMPC(currentState, desiredState, gaitTable, rFeet);
     auto example_mpcForces = openData<double>(getTestDataCSV("mpcForces"));
     for (int i = 0; i < numLegs; i++)
     {
