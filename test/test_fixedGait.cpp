@@ -3,8 +3,9 @@
 #include "quadruped_control_library/fixedGait.hpp"
 
 #define ABS_ERROR 0.001
+using namespace FixedGait;
 
-FixedGait fixedGait(4, 10, 0.6, 0.3, std::vector<int>{0, 5, 5, 0});
+Gait fixedGait(4, 10, 0.6, 0.3, std::vector<int>{0, 5, 5, 0});
 
 TEST(FixedGait, getSwingProgression)
 {
@@ -54,6 +55,6 @@ TEST(FixedGait, getGaitTable)
 #ifdef NDEBUG
 TEST(FixedGait, wrongNumberLegs)
 {
-    ASSERT_DEATH(FixedGait(5, 10, 0.6, 0.3, std::vector<int>{0, 5, 5, 0}), "");
+    ASSERT_DEATH(Gait(5, 10, 0.6, 0.3, std::vector<int>{0, 5, 5, 0}), "");
 }
 #endif

@@ -4,9 +4,11 @@
 
 #define ABS_ERROR 0.001
 
+using namespace FixedFootTrajectory;
+
 TEST(FixedFootTrajectory, computeSwingTrajectoryBezier)
 {
-    FixedFootTrajectory fixedFootTrajectory;
+    FootTrajectory fixedFootTrajectory;
     Eigen::Vector3d _p0(1, 1, 1);
     fixedFootTrajectory.setInitialPosition(_p0);
     Eigen::Vector3d pf(2, 2, 1.2);
