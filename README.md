@@ -9,11 +9,13 @@ This library's implementation is highly influenced by the [MIT Cheetah Software]
 - Bipedal robots
 - Hexapod robots
 
+This library assumes x-axis as forward, z-axis as vertical and y-axis pointing to the left.
+
 The planned components of the library are:
 
 - Control components
     - [x] convex Model Predictive Control
-    - [ ] Leg Controller 
+    - [x] Leg Controller 
 - Foot movement components
     - [x] Fixed Gait
     - [x] Fixed Foot Trajectory 
@@ -21,3 +23,7 @@ The planned components of the library are:
 
 ## Requirements
 - [qpOASES](https://github.com/coin-or/qpOASES)
+
+## TODO
+- [ ] Allow flexible allocation of forward axis (East,North,Up setting)
+- [ ] Implement Leg Controller for hexapod robots

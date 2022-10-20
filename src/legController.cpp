@@ -1,12 +1,15 @@
 #include "quadruped_control_library/legController.hpp"
 #include <cmath>
 
+namespace QuadrupedLeg {
 LegController::LegController(int side, double hip, double thigh, double knee,
-                             Eigen::Vector3d kP, Eigen::Vector3d kD) {
+                             Eigen::Vector3d hipLocation, Eigen::Vector3d kP,
+                             Eigen::Vector3d kD) {
   hip_ = hip;
   thigh_ = thigh;
   knee_ = knee;
   side_ = side;
+  hipLocation_ = hipLocation;
   kP_.setZero();
   kD_.setZero();
   kP_.diagonal() = kP;
@@ -57,3 +60,4 @@ Eigen::Vector3d LegController::getTorque(Eigen::Vector3d desiredPosition,
   finalTorque += computelegJacobian().transpose() * desiredForce;
   return finalTorque;
 }
+} // namespace QuadrupedLeg

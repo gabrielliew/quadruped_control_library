@@ -3,6 +3,7 @@
 
 #include <Eigen/Core>
 
+namespace QuadrupedLeg {
 /**
  * @brief Creating a Leg Controller Class. Assumes the legs have same axis for
  * all joints
@@ -11,10 +12,15 @@
 class LegController {
 public:
   LegController(int side, double hip, double thigh, double knee,
-                Eigen::Vector3d kP, Eigen::Vector3d kD);
+                Eigen::Vector3d hipLocation, Eigen::Vector3d kP,
+                Eigen::Vector3d kD);
   void updatePosition(Eigen::Vector3d position) { position_ = position; }
   void updateVelocity(Eigen::Vector3d velocity) { velocity_ = velocity; }
+  int getSide() { return side_; }
   Eigen::Vector3d computeFootPosition();
+  Eigen::Vector3d computeFootPositionCOM() {
+    return computeFootPosition() + hipLocation_;
+  }
   Eigen::Matrix3d computelegJacobian();
   Eigen::Vector3d getTorque(Eigen::Vector3d desiredPosition,
                             Eigen::Vector3d desiredVelocity,
@@ -29,11 +35,11 @@ private:
   double hip_;
   double thigh_;
   double knee_;
-
+  Eigen::Vector3d hipLocation_;
   Eigen::Vector3d position_;
   Eigen::Vector3d velocity_;
   Eigen::Matrix3d kP_;
   Eigen::Matrix3d kD_;
 };
-
+} // namespace QuadrupedLeg
 #endif /* INCLUDE_QUADRUPED_CONTROL_LIBRARY_LEGCONTROLLER_HPP */

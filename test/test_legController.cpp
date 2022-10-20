@@ -3,11 +3,11 @@
 #include "quadruped_control_library/legController.hpp"
 
 #define ABS_ERROR 0.001
-
+using namespace QuadrupedLeg;
 LegController leftLeg(1, 0.062, 0.209, 0.195, Eigen::Vector3d(0, 0, 0),
-                      Eigen::Vector3d(0, 0, 0));
+                      Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0));
 LegController rightLeg(-1, 0.062, 0.209, 0.195, Eigen::Vector3d(0, 0, 0),
-                       Eigen::Vector3d(0, 0, 0));
+                       Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0));
 
 TEST(LegController, computeFootPosition) {
   Eigen::Vector3d leftTest, rightTest, position;
@@ -127,5 +127,4 @@ TEST(LegController, computelegJacobian) {
   for (int i = 0; i < 3; i++) {
     EXPECT_NEAR(p1[i], example_p1[i], ABS_ERROR);
   }
-  
 }
