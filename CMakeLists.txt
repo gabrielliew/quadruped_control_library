@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD 17)
 # find_package(catkin REQUIRED )
 find_package(Eigen3 REQUIRED)
 find_package(qpOASES REQUIRED)
-FIND_PACKAGE(RBDL COMPONENTS URDFREADER REQUIRED)
+# FIND_PACKAGE(RBDL COMPONENTS URDFREADER REQUIRED)
 
 # catkin_package(
 # INCLUDE_DIRS include
@@ -25,20 +25,16 @@ IF(NOT CMAKE_VERBOSE_MAKEFILE)
   SET(CMAKE_VERBOSE_MAKEFILE OFF)
 ENDIF(NOT CMAKE_VERBOSE_MAKEFILE)
 
+OPTION(QUADRUPED_CONTROL_BUILD_STATIC "Build statically linked library (otherwise dynamiclly linked)" OFF)
 option(BUILD_TESTS "If ON, build tests" OFF)
 
 include_directories(
   include
-
-  # ${catkin_INCLUDE_DIRS}
 )
 
 configure_file(${CMAKE_SOURCE_DIR}/include/path.hpp.in ${CMAKE_SOURCE_DIR}/include/path.hpp)
 
 file(GLOB_RECURSE QUADRUPED_CONTROL_SOURCES "src/*.cpp")
-
-SET(QUADRUPED_CONTROL_BUILD_STATIC_DEFAULT OFF)
-OPTION(QUADRUPED_CONTROL_BUILD_STATIC "Build statically linked library (otherwise dynamiclly linked)" ${QUADRUPED_CONTROL_BUILD_STATIC_DEFAULT})
 
 IF(QUADRUPED_CONTROL_BUILD_STATIC)
   ADD_LIBRARY(quadruped_control STATIC ${QUADRUPED_CONTROL_SOURCES})
@@ -55,8 +51,6 @@ TARGET_INCLUDE_DIRECTORIES(quadruped_control PUBLIC
 target_link_libraries(quadruped_control
   Eigen3::Eigen
   ${qpOASES_LIBRARY}
-  ${RBDL_LIBRARY}
-  ${RBDL_URDFREADER_LIBRARY}
 )
 
 INSTALL(TARGETS quadruped_control
@@ -83,8 +77,8 @@ if(BUILD_TESTS)
   target_link_libraries(test_main
     Eigen3::Eigen
     ${qpOASES_LIBRARY}
-    ${RBDL_LIBRARY}
-    ${RBDL_URDFREADER_LIBRARY}
+    # ${RBDL_LIBRARY}
+    # ${RBDL_URDFREADER_LIBRARY}
     quadruped_control
     GTest::gtest_main)
   target_link_directories(test_main PUBLIC ${CMAKE_SOURCE_DIR}/test)
