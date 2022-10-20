@@ -25,10 +25,11 @@ IF(NOT CMAKE_VERBOSE_MAKEFILE)
   SET(CMAKE_VERBOSE_MAKEFILE OFF)
 ENDIF(NOT CMAKE_VERBOSE_MAKEFILE)
 
-option(BUILD_SHARED_LIBS "If ON, build shared library instead of static" OFF)
+option(BUILD_TESTS "If ON, build tests" OFF)
 
 include_directories(
   include
+
   # ${catkin_INCLUDE_DIRS}
 )
 
@@ -64,27 +65,29 @@ INSTALL(TARGETS quadruped_control
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG release-1.12.1
-)
+if(BUILD_TESTS)
+  include(FetchContent)
+  FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG release-1.12.1
+  )
 
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+  # For Windows: Prevent overriding the parent project's compiler/linker settings
+  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+  FetchContent_MakeAvailable(googletest)
 
-enable_testing()
-file(GLOB_RECURSE test_sources "test/test_*.cpp")
-add_executable(test_main ${test_sources})
-target_link_libraries(test_main
-  Eigen3::Eigen
-  ${qpOASES_LIBRARY}
-  ${RBDL_LIBRARY}
-  ${RBDL_URDFREADER_LIBRARY}
-  quadruped_control
-  GTest::gtest_main)
-target_link_directories(test_main PUBLIC ${CMAKE_SOURCE_DIR}/test)
-include(GoogleTest)
-gtest_discover_tests(test_main)
+  enable_testing()
+  file(GLOB_RECURSE test_sources "test/test_*.cpp")
+  add_executable(test_main ${test_sources})
+  target_link_libraries(test_main
+    Eigen3::Eigen
+    ${qpOASES_LIBRARY}
+    ${RBDL_LIBRARY}
+    ${RBDL_URDFREADER_LIBRARY}
+    quadruped_control
+    GTest::gtest_main)
+  target_link_directories(test_main PUBLIC ${CMAKE_SOURCE_DIR}/test)
+  include(GoogleTest)
+  gtest_discover_tests(test_main)
+endif(BUILD_TESTS)

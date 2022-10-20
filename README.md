@@ -18,9 +18,6 @@ The planned components of the library are:
     - [x] Fixed Gait
     - [x] Fixed Foot Trajectory 
     - [ ] Fixed Foot Planner
-- Dynamics components
-    - [ ] Body Dynamics (based on RBDL)
 
 ## Requirements
 - [qpOASES](https://github.com/coin-or/qpOASES)
-- [RBDL](https://github.com/rbdl/rbdl)
