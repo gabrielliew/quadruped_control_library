@@ -1,7 +1,7 @@
 #ifndef PATH_HPP
 #define PATH_HPP
 
-const auto build_directory= "${CMAKE_CURRENT_BINARY_DIR}/";
-const auto source_directory= "${CMAKE_CURRENT_SOURCE_DIR}/";
+const auto build_directory = "${CMAKE_CURRENT_BINARY_DIR}/";
+const auto source_directory = "${CMAKE_CURRENT_SOURCE_DIR}/";
 
 #endif /* PATH_HPP */
