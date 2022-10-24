@@ -3,26 +3,21 @@
 
 namespace QuadrupedLeg {
 LegController::LegController(int side, double hip, double thigh, double knee,
-                             Eigen::Vector3d hipLocation, Eigen::Vector3d kP,
-                             Eigen::Vector3d kD) {
+                             Eigen::Vector3d hipLocation) {
   hip_ = hip;
   thigh_ = thigh;
   knee_ = knee;
   side_ = side;
   hipLocation_ = hipLocation;
-  kP_.setZero();
-  kD_.setZero();
-  kP_.diagonal() = kP;
-  kD_.diagonal() = kD;
 }
 
 Eigen::Vector3d LegController::computeFootPosition() {
-  double sin0 = std::sin(position_[0]);
-  double sin1 = std::sin(position_[1]);
-  double sin12 = std::sin(position_[1] + position_[2]);
-  double cos0 = std::cos(position_[0]);
-  double cos1 = std::cos(position_[1]);
-  double cos12 = std::cos(position_[1] + position_[2]);
+  double sin0 = std::sin(q_[0]);
+  double sin1 = std::sin(q_[1]);
+  double sin12 = std::sin(q_[1] + q_[2]);
+  double cos0 = std::cos(q_[0]);
+  double cos1 = std::cos(q_[1]);
+  double cos12 = std::cos(q_[1] + q_[2]);
 
   double x = -thigh_ * sin1 - knee_ * sin12;
   double y = hip_ * side_ * cos0 + sin0 * (thigh_ * cos1 + knee_ * cos12);
@@ -33,12 +28,12 @@ Eigen::Vector3d LegController::computeFootPosition() {
 
 Eigen::Matrix3d LegController::computelegJacobian() {
   Eigen::Matrix3d jacobian;
-  double sin0 = std::sin(position_[0]);
-  double sin1 = std::sin(position_[1]);
-  double sin12 = std::sin(position_[1] + position_[2]);
-  double cos0 = std::cos(position_[0]);
-  double cos1 = std::cos(position_[1]);
-  double cos12 = std::cos(position_[1] + position_[2]);
+  double sin0 = std::sin(q_[0]);
+  double sin1 = std::sin(q_[1]);
+  double sin12 = std::sin(q_[1] + q_[2]);
+  double cos0 = std::cos(q_[0]);
+  double cos1 = std::cos(q_[1]);
+  double cos12 = std::cos(q_[1] + q_[2]);
   jacobian(0, 0) = 0;
   jacobian(0, 1) = -thigh_ * cos1 - knee_ * cos12;
   jacobian(0, 2) = -knee_ * cos12;
@@ -51,13 +46,21 @@ Eigen::Matrix3d LegController::computelegJacobian() {
   return jacobian;
 }
 
-Eigen::Vector3d LegController::getTorque(Eigen::Vector3d desiredPosition,
-                                         Eigen::Vector3d desiredVelocity,
-                                         Eigen::Vector3d desiredForce) {
+Eigen::Vector3d LegController::getTorque(legCartesianCommand desiredCommand) {
   Eigen::Vector3d finalTorque = Eigen::Vector3d(0, 0, 0);
-  finalTorque += kP_ * (desiredPosition - position_);
-  finalTorque += kD_ * (desiredVelocity - velocity_);
-  finalTorque += computelegJacobian().transpose() * desiredForce;
+  auto position = computeFootPosition();
+  auto velocity = computelegJacobian()*qd_;
+  finalTorque += desiredCommand.kP * (desiredCommand.pDesired - position);
+  finalTorque += desiredCommand.kd * (desiredCommand.vDesired - velocity);
+  finalTorque += computelegJacobian().transpose() * desiredCommand.feedForwardForce;
+  return finalTorque;
+}
+
+Eigen::Vector3d LegController::getTorque(legJointCommand desiredCommand) {
+  Eigen::Vector3d finalTorque = Eigen::Vector3d(0, 0, 0);
+  finalTorque += desiredCommand.kP * (desiredCommand.qDesired - q_);
+  finalTorque += desiredCommand.kd * (desiredCommand.qdDesired - qd_);
+  finalTorque += desiredCommand.feedForwardTorque;
   return finalTorque;
 }
 } // namespace QuadrupedLeg

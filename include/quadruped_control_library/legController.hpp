@@ -9,22 +9,52 @@ namespace QuadrupedLeg {
  * all joints
  *
  */
+struct legCartesianCommand {
+  Eigen::Vector3d feedForwardForce = Eigen::Vector3d::Zero();
+  Eigen::Vector3d pDesired = Eigen::Vector3d::Zero();
+  Eigen::Vector3d vDesired = Eigen::Vector3d::Zero();
+  Eigen::Matrix3d kP = Eigen::Matrix3d::Zero();
+  Eigen::Matrix3d kd = Eigen::Matrix3d::Zero();
+};
+
+struct legJointCommand {
+  Eigen::Vector3d feedForwardTorque = Eigen::Vector3d::Zero();
+  Eigen::Vector3d qDesired = Eigen::Vector3d::Zero();
+  Eigen::Vector3d qdDesired = Eigen::Vector3d::Zero();
+  Eigen::Matrix3d kP = Eigen::Matrix3d::Zero();
+  Eigen::Matrix3d kd = Eigen::Matrix3d::Zero();
+};
+
 class LegController {
 public:
   LegController(int side, double hip, double thigh, double knee,
-                Eigen::Vector3d hipLocation, Eigen::Vector3d kP,
-                Eigen::Vector3d kD);
-  void updatePosition(Eigen::Vector3d position) { position_ = position; }
-  void updateVelocity(Eigen::Vector3d velocity) { velocity_ = velocity; }
+                Eigen::Vector3d hipLocation);
+
+  /**
+   * @brief For updating the robot leg position during simulation
+   *
+   * @param q
+   */
+  void updateQ(Eigen::Vector3d q) { q_ = q; }
+
+  /**
+   * @brief For updating the robot leg velocity during simulation
+   *
+   * @param qd
+   */
+  void updateQD(Eigen::Vector3d qd) { qd_ = qd; }
+
   int getSide() { return side_; }
+
   Eigen::Vector3d computeFootPosition();
+
   Eigen::Vector3d computeFootPositionCOM() {
     return computeFootPosition() + hipLocation_;
   }
+
   Eigen::Matrix3d computelegJacobian();
-  Eigen::Vector3d getTorque(Eigen::Vector3d desiredPosition,
-                            Eigen::Vector3d desiredVelocity,
-                            Eigen::Vector3d desiredForce);
+  Eigen::Vector3d getTorque(legCartesianCommand desiredCommand);
+  Eigen::Vector3d getTorque(legJointCommand desiredCommand);
 
 private:
   /**
@@ -36,10 +66,8 @@ private:
   double thigh_;
   double knee_;
   Eigen::Vector3d hipLocation_;
-  Eigen::Vector3d position_;
-  Eigen::Vector3d velocity_;
-  Eigen::Matrix3d kP_;
-  Eigen::Matrix3d kD_;
+  Eigen::Vector3d q_;
+  Eigen::Vector3d qd_;
 };
 } // namespace QuadrupedLeg
 #endif /* INCLUDE_QUADRUPED_CONTROL_LIBRARY_LEGCONTROLLER_HPP */
