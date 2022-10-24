@@ -53,6 +53,9 @@ public:
    */
   std::vector<bool> getGaitTable(uint64_t timeFromStart);
 
+  double getSwingDuration() { return swingDuration_; }
+  double getContactDuration() { return contactDuration_; }
+
 private:
   /**
    * @brief Number of segments within a gait cycle
@@ -98,6 +101,9 @@ private:
    *
    */
   std::vector<uint64_t> offset_;
+
+  double swingDuration_;
+  double contactDuration_;
 };
 } // namespace FixedGait
 #endif /* INCLUDE_QUADRUPED_CONTROL_LIBRARY_FIXEDGAIT_HPP */

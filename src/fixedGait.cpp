@@ -12,6 +12,8 @@ Gait::Gait(uint numLegs, uint numSegments, double gaitDuration,
   swingDurationNs_ = gaitDurationNs_ - contactDurationNs_;
   singleSegmentNs_ = gaitDurationNs_ / numSegments;
   numLegs_ = numLegs;
+  swingDuration_ = gaitDuration - contactDuration;
+  contactDuration_ = contactDuration;
 #ifdef NDEBUG
   assert(numLegs_ == offset.size());
 #endif
