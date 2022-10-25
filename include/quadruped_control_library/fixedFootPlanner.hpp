@@ -17,6 +17,7 @@ struct FootPlannerData {
 
 class FootPlanner {
 public:
+  FootPlanner(){};
   FootPlanner(uint numLegs, std::vector<Eigen::Vector3d> hipLocation,
               double swingDuration, double contactDuration, double dt);
 

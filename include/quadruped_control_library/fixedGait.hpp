@@ -7,6 +7,7 @@
 namespace FixedGait {
 class Gait {
 public:
+  Gait(){};
   /**
    * @brief Construct a new Gait object
    *

@@ -37,6 +37,7 @@ struct MPCdata {
 
 class ConvexMPC {
 public:
+  ConvexMPC(){};
   /**
    * @brief Construct a new ConvexMPC object
    *

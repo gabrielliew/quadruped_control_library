@@ -27,6 +27,7 @@ struct legJointCommand {
 
 class LegController {
 public:
+  LegController(){};
   LegController(int side, double hip, double thigh, double knee,
                 Eigen::Vector3d hipLocation);
 
