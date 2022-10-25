@@ -217,7 +217,6 @@ TEST(ConvexMPC, solveMPC) {
       convexMPC.solveMPC(currentState, desiredState, gaitTable, rFeet);
   auto example_mpcForces = openData<double>(getTestDataCSV("mpcForces"));
   for (int i = 0; i < numLegs; i++) {
-    std::cout << mpcForces[i] << std::endl;
     EXPECT_NEAR(mpcForces[i][0], example_mpcForces(i * 3, 0), ABS_ERROR);
     EXPECT_NEAR(mpcForces[i][1], example_mpcForces(i * 3 + 1, 0), ABS_ERROR);
     EXPECT_NEAR(mpcForces[i][2], example_mpcForces(i * 3 + 2, 0), ABS_ERROR);
